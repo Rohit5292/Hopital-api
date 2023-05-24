@@ -18,22 +18,38 @@ module.exports.registerDoctor = async (req, res, next) => {
   }
 };
 
-module.exports.registerPatient= async (req,res,next)=>{
-    try{
-        req.body.doctor ='646b62d254dc1c0f84896f2c'
-        const patient = await Patient.create(req.body)
-        res.status(200).json({
-            success: true,
-            message: 'Patient created',
-          });
+module.exports.registerPatient = async (req, res, next) => {
+  try {
+    const doctorId = req.user.id; // Assuming the authenticated doctor's ID is available in the `id` property of the `req.user` object
+
+    // Check if the doctorId is provided
+    if (!doctorId) {
+      throw new Error('Doctor ID is required');
     }
-    catch(err){
-        res.status(500).json({
-            success: false,
-            message: 'Patient not created. Error occurred.',
-          });
+
+    // Check if the doctor with the given ID exists
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      throw new Error('Doctor not found');
     }
-}
+
+    // Doctor ID is valid, proceed with patient registration
+    req.body.doctor = doctorId;
+    const patient = await Patient.create(req.body);
+    res.status(200).json({
+      success: true,
+      message: 'Patient created',
+    });
+  } catch (err) {
+    console.error(err); // Log the error for debugging purposes
+    res.status(500).json({
+      success: false,
+      message: 'Patient not created. An error occurred.',
+      error: err.message, // Include the error message in the response
+    });
+  }
+};
+
 module.exports.createReport = async (req, res, next) => {
     try {
       const patient = await Patient.findById(req.params.id);
